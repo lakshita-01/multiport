@@ -1,143 +1,242 @@
 import { useState, useEffect } from 'react';
 import { api } from '../../lib/api';
-import { Search, MapPin, Home, DollarSign, Maximize, Filter } from 'lucide-react';
+import { Search, MapPin, Home, Maximize2, Filter, X, Phone, Mail, Star, Eye, ChevronLeft, ChevronRight } from 'lucide-react';
+
+const typeEmoji = { Apartment:'🏢', Villa:'🏡', Plot:'🌿', Commercial:'🏪', 'Farm House':'🌾', Penthouse:'🏙️' };
+const typeColor = {
+  Apartment:'tag-blue', Villa:'tag-green', Plot:'tag-amber',
+  Commercial:'tag-indigo', 'Farm House':'tag-green', Penthouse:'tag-pink',
+};
+
+const Skeleton = () => (
+  <div className="card overflow-hidden">
+    <div className="skeleton h-52 rounded-none" />
+    <div className="p-5 space-y-3">
+      <div className="skeleton h-5 w-3/4" />
+      <div className="skeleton h-4 w-1/2" />
+      <div className="skeleton h-8 w-1/3" />
+    </div>
+  </div>
+);
 
 const BrowseProperties = () => {
   const [properties, setProperties] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [search, setSearch] = useState('');
   const [filterType, setFilterType] = useState('');
-  const [selectedProperty, setSelectedProperty] = useState(null);
+  const [selected, setSelected] = useState(null);
+  const [imgIdx, setImgIdx] = useState(0);
 
-  const propertyTypes = ['All', 'Apartment', 'Villa', 'Plot', 'Commercial', 'Farm House', 'Penthouse'];
+  const types = ['All','Apartment','Villa','Plot','Commercial','Farm House','Penthouse'];
 
-  useEffect(() => { fetchProperties(); }, []);
-
-  const fetchProperties = async () => {
-    try {
-      setLoading(true);
-      const { data } = await api.get('/api/property/properties');
-      setProperties(data || []);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
+  useEffect(() => { fetch(); }, []);
+  const fetch = async () => {
+    try { setLoading(true); const { data } = await api.get('/api/property/properties'); setProperties(data||[]); }
+    catch(e){ console.error(e); } finally { setLoading(false); }
   };
 
-  const filteredProperties = properties.filter((p) => {
-    const matchesSearch = p.location.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      p.property_type.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesType = !filterType || filterType === 'All' || p.property_type === filterType;
-    return matchesSearch && matchesType;
+  const filtered = properties.filter(p => {
+    const s = `${p.location} ${p.property_type}`.toLowerCase().includes(search.toLowerCase());
+    const t = !filterType || filterType==='All' || p.property_type===filterType;
+    return s && t;
   });
 
-  if (loading) return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-      <div className="text-xl text-gray-600">Loading properties...</div>
-    </div>
-  );
+  const open = (p) => { setSelected(p); setImgIdx(0); };
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12">
-      <div className="container mx-auto px-4">
-        <h1 className="text-4xl font-bold text-gray-800 mb-8">Browse Properties</h1>
-
-        <div className="bg-white rounded-xl shadow-lg p-6 mb-8">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-              <input type="text" placeholder="Search by location or type..." value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
+    <div className="min-h-screen dots-bg">
+      {/* Header */}
+      <div className="bg-white border-b border-gray-100 sticky top-16 z-30">
+        <div className="container mx-auto px-4 py-4">
+          <div className="flex flex-col md:flex-row gap-3 items-center">
+            <div className="flex-1 relative w-full">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search city, area, property type..."
+                className="field pl-11 py-3 w-full" />
             </div>
-            <div className="relative">
-              <Filter className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-              <select value={filterType} onChange={(e) => setFilterType(e.target.value)}
-                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none appearance-none">
-                {propertyTypes.map((t) => <option key={t} value={t === 'All' ? '' : t}>{t}</option>)}
-              </select>
+            <div className="flex gap-2 flex-wrap">
+              {types.map(t=>(
+                <button key={t} onClick={()=>setFilterType(t==='All'?'':t)}
+                  className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all border ${
+                    (t==='All'&&!filterType)||filterType===t
+                      ? 'bg-indigo-600 text-white border-indigo-600 shadow-lg shadow-indigo-200'
+                      : 'bg-white text-gray-600 border-gray-200 hover:border-indigo-300'
+                  }`}>
+                  {typeEmoji[t]||'🏠'} {t}
+                </button>
+              ))}
             </div>
           </div>
         </div>
+      </div>
 
-        {filteredProperties.length === 0 ? (
-          <div className="text-center py-12"><p className="text-xl text-gray-600">No properties found</p></div>
+      <div className="container mx-auto px-4 py-10">
+        {/* Title */}
+        <div className="mb-8 flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-black text-gray-900">Browse Properties</h1>
+            <p className="text-gray-500 mt-1">{loading ? 'Loading...' : `${filtered.length} properties found`}</p>
+          </div>
+        </div>
+
+        {/* Grid */}
+        {loading ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[...Array(6)].map((_,i)=><Skeleton key={i}/>)}
+          </div>
+        ) : filtered.length === 0 ? (
+          <div className="text-center py-24">
+            <div className="text-6xl mb-4">🔍</div>
+            <h3 className="text-xl font-bold text-gray-700 mb-2">No properties found</h3>
+            <p className="text-gray-500">Try adjusting your search or filters</p>
+          </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {filteredProperties.map((property) => (
-              <div key={property.id} onClick={() => setSelectedProperty(property)}
-                className="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-2xl transition-all transform hover:scale-105 cursor-pointer">
-                <div className="h-48 bg-gradient-to-r from-blue-400 to-blue-600 relative">
-                  {property.image_urls?.[0] ? (
-                    <img src={property.image_urls[0]} alt={property.property_type} className="w-full h-full object-cover" />
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filtered.map((p,i)=>(
+              <div key={p.id||i} onClick={()=>open(p)}
+                className="card card-glow cursor-pointer overflow-hidden group animate-slide-up"
+                style={{animationDelay:`${i*0.06}s`}}>
+                {/* Image */}
+                <div className="relative h-52 overflow-hidden">
+                  {p.image_urls?.[0] ? (
+                    <img src={p.image_urls[0]} alt={p.property_type}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center">
-                      <Home className="w-20 h-20 text-white opacity-50" />
+                    <div className="w-full h-full flex flex-col items-center justify-center"
+                      style={{background:'linear-gradient(135deg,#6366f1,#8b5cf6)'}}>
+                      <Home className="w-14 h-14 text-white/60" />
+                      <span className="text-white/60 text-sm mt-2">No Image</span>
                     </div>
                   )}
-                  <div className="absolute top-4 right-4 bg-white px-3 py-1 rounded-full text-sm font-semibold text-blue-600">
-                    {property.property_type}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
+                  <div className="absolute top-3 left-3">
+                    <span className={`tag ${typeColor[p.property_type]||'tag-indigo'}`}>
+                      {typeEmoji[p.property_type]||'🏠'} {p.property_type}
+                    </span>
+                  </div>
+                  <div className="absolute bottom-3 right-3">
+                    <span className="price-tag text-sm">₹{parseInt(p.selling_price).toLocaleString()}</span>
                   </div>
                 </div>
-                <div className="p-6">
-                  <h3 className="text-xl font-bold text-gray-800 mb-3">{property.property_type} in {property.location}</h3>
-                  <div className="space-y-2 mb-4">
-                    <div className="flex items-center text-gray-600"><MapPin className="w-4 h-4 mr-2" /><span>{property.location}</span></div>
-                    <div className="flex items-center text-gray-600"><Maximize className="w-4 h-4 mr-2" /><span>{property.area_size} sq. ft.</span></div>
-                    <div className="flex items-center text-gray-600">
-                      <span className="text-2xl font-bold text-green-600">₹{parseInt(property.selling_price).toLocaleString()}</span>
-                    </div>
+                {/* Body */}
+                <div className="p-5">
+                  <h3 className="font-bold text-gray-900 text-lg mb-2 line-clamp-1">
+                    {p.property_type} in {p.location}
+                  </h3>
+                  <div className="flex items-center gap-4 text-sm text-gray-500 mb-3">
+                    <span className="flex items-center gap-1"><MapPin className="w-3.5 h-3.5"/>{p.location}</span>
+                    <span className="flex items-center gap-1"><Maximize2 className="w-3.5 h-3.5"/>{p.area_size} sq.ft</span>
                   </div>
-                  <p className="text-gray-600 text-sm line-clamp-2">{property.description}</p>
-                  <button className="mt-4 w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition">View Details</button>
+                  <p className="text-gray-500 text-sm line-clamp-2 mb-4">{p.description}</p>
+                  <button className="btn btn-primary w-full py-2.5 text-sm rounded-xl">
+                    <Eye className="w-4 h-4"/> View Details
+                  </button>
                 </div>
               </div>
             ))}
           </div>
         )}
+      </div>
 
-        {selectedProperty && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50" onClick={() => setSelectedProperty(null)}>
-            <div className="bg-white rounded-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-              <div className="sticky top-0 bg-white border-b px-6 py-4 flex justify-between items-center">
-                <h2 className="text-2xl font-bold text-gray-800">Property Details</h2>
-                <button onClick={() => setSelectedProperty(null)} className="text-gray-500 hover:text-gray-700 text-xl">✕</button>
-              </div>
-              <div className="p-6 space-y-4">
-                {selectedProperty.image_urls?.length > 0 && (
-                  <div className="grid grid-cols-2 gap-4">
-                    {selectedProperty.image_urls.map((url, i) => (
-                      <img key={i} src={url} alt={`Property ${i + 1}`} className="w-full h-64 object-cover rounded-lg" />
-                    ))}
-                  </div>
+      {/* Modal */}
+      {selected && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          style={{background:'rgba(15,12,41,.7)', backdropFilter:'blur(8px)'}}
+          onClick={()=>setSelected(null)}>
+          <div className="bg-white rounded-3xl max-w-3xl w-full max-h-[90vh] overflow-y-auto animate-scale-in shadow-2xl"
+            onClick={e=>e.stopPropagation()}>
+            {/* Image Carousel */}
+            {selected.image_urls?.length > 0 && (
+              <div className="relative h-72 overflow-hidden rounded-t-3xl">
+                <img src={selected.image_urls[imgIdx]} alt="Property"
+                  className="w-full h-full object-cover" />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
+                {selected.image_urls.length > 1 && (
+                  <>
+                    <button onClick={()=>setImgIdx(i=>(i-1+selected.image_urls.length)%selected.image_urls.length)}
+                      className="absolute left-3 top-1/2 -translate-y-1/2 glass w-9 h-9 rounded-full flex items-center justify-center text-white">
+                      <ChevronLeft className="w-5 h-5"/>
+                    </button>
+                    <button onClick={()=>setImgIdx(i=>(i+1)%selected.image_urls.length)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 glass w-9 h-9 rounded-full flex items-center justify-center text-white">
+                      <ChevronRight className="w-5 h-5"/>
+                    </button>
+                    <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1">
+                      {selected.image_urls.map((_,i)=>(
+                        <button key={i} onClick={()=>setImgIdx(i)}
+                          className={`w-2 h-2 rounded-full transition-all ${i===imgIdx?'bg-white w-6':'bg-white/50'}`}/>
+                      ))}
+                    </div>
+                  </>
                 )}
-                {selectedProperty.video_urls?.length > 0 && (
-                  <div>
-                    <h3 className="text-lg font-bold mb-3">Property Videos</h3>
-                    {selectedProperty.video_urls.map((url, i) => (
-                      <video key={i} controls className="w-full rounded-lg mb-2"><source src={url} type="video/mp4" /></video>
-                    ))}
-                  </div>
-                )}
-                <div className="grid grid-cols-2 gap-4">
-                  <div><h3 className="font-bold text-gray-800">Type</h3><p className="text-gray-600">{selectedProperty.property_type}</p></div>
-                  <div><h3 className="font-bold text-gray-800">Location</h3><p className="text-gray-600">{selectedProperty.location}</p></div>
-                  <div><h3 className="font-bold text-gray-800">Area</h3><p className="text-gray-600">{selectedProperty.area_size} sq. ft.</p></div>
-                  <div><h3 className="font-bold text-gray-800">Price</h3><p className="text-2xl font-bold text-green-600">₹{parseInt(selectedProperty.selling_price).toLocaleString()}</p></div>
+                <button onClick={()=>setSelected(null)}
+                  className="absolute top-4 right-4 glass w-9 h-9 rounded-full flex items-center justify-center text-white hover:bg-white/30">
+                  <X className="w-5 h-5"/>
+                </button>
+                <div className="absolute bottom-4 left-4">
+                  <span className="price-tag">₹{parseInt(selected.selling_price).toLocaleString()}</span>
                 </div>
-                <div><h3 className="font-bold text-gray-800 mb-1">Description</h3><p className="text-gray-600">{selectedProperty.description}</p></div>
-                <div className="bg-blue-50 rounded-lg p-4">
-                  <h3 className="font-bold text-gray-800 mb-2">Seller Contact</h3>
-                  <p className="text-gray-600"><strong>Name:</strong> {selectedProperty.seller_name}</p>
-                  <p className="text-gray-600"><strong>Phone:</strong> {selectedProperty.seller_phone}</p>
-                  <p className="text-gray-600"><strong>Email:</strong> {selectedProperty.seller_email}</p>
+              </div>
+            )}
+
+            <div className="p-7">
+              <div className="flex items-start justify-between mb-5">
+                <div>
+                  <h2 className="text-2xl font-black text-gray-900">{selected.property_type} in {selected.location}</h2>
+                  <div className="flex items-center gap-3 mt-2 text-gray-500 text-sm">
+                    <span className="flex items-center gap-1"><MapPin className="w-4 h-4 text-indigo-400"/>{selected.location}</span>
+                    <span className="flex items-center gap-1"><Maximize2 className="w-4 h-4 text-indigo-400"/>{selected.area_size} sq.ft</span>
+                  </div>
+                </div>
+                {!selected.image_urls?.length && (
+                  <button onClick={()=>setSelected(null)} className="btn btn-ghost py-2 px-3 rounded-xl"><X className="w-4 h-4"/></button>
+                )}
+              </div>
+
+              {/* Stats */}
+              <div className="grid grid-cols-3 gap-3 mb-6">
+                {[
+                  {label:'Type', value:selected.property_type, icon:'🏠'},
+                  {label:'Area', value:`${selected.area_size} sq.ft`, icon:'📐'},
+                  {label:'Status', value:'Available', icon:'✅'},
+                ].map((s,i)=>(
+                  <div key={i} className="bg-gray-50 rounded-2xl p-4 text-center">
+                    <div className="text-2xl mb-1">{s.icon}</div>
+                    <div className="font-bold text-gray-900 text-sm">{s.value}</div>
+                    <div className="text-xs text-gray-500">{s.label}</div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="mb-5">
+                <h3 className="font-bold text-gray-900 mb-2">Description</h3>
+                <p className="text-gray-600 text-sm leading-relaxed">{selected.description}</p>
+              </div>
+
+              {selected.video_urls?.length > 0 && (
+                <div className="mb-5">
+                  <h3 className="font-bold text-gray-900 mb-3">Property Videos</h3>
+                  {selected.video_urls.map((u,i)=>(
+                    <video key={i} controls className="w-full rounded-2xl mb-2"><source src={u} type="video/mp4"/></video>
+                  ))}
+                </div>
+              )}
+
+              {/* Seller */}
+              <div className="gradient-border p-5 mt-5 rounded-2xl">
+                <h3 className="font-bold text-gray-900 mb-3 flex items-center gap-2">
+                  <Star className="w-4 h-4 text-amber-500 fill-amber-500"/> Seller Contact
+                </h3>
+                <div className="space-y-2 text-sm">
+                  <p className="flex items-center gap-2 text-gray-700"><span className="font-semibold">👤</span>{selected.seller_name}</p>
+                  <p className="flex items-center gap-2 text-gray-700"><Phone className="w-4 h-4 text-indigo-500"/>{selected.seller_phone}</p>
+                  <p className="flex items-center gap-2 text-gray-700"><Mail className="w-4 h-4 text-indigo-500"/>{selected.seller_email}</p>
                 </div>
               </div>
             </div>
           </div>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -96,8 +96,8 @@ const Admin = () => {
   };
 
   if (loading) return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-      <div className="text-xl text-gray-600">Loading dashboard...</div>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center">
+      <div className="text-lg font-semibold text-slate-600">Loading dashboard...</div>
     </div>
   );
 
@@ -109,8 +109,8 @@ const Admin = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="container mx-auto px-4 py-8">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8">
           <h1 className="text-4xl font-bold text-gray-800 mb-1">Admin Dashboard</h1>
           <p className="text-gray-600">Logged in as {user?.email}</p>
