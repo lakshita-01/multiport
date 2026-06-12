@@ -48,15 +48,6 @@ const BuyerRegister = () => {
     }
   };
 
-  if (!user) return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-      <div className="text-center">
-        <p className="text-xl text-gray-600 mb-4">Please sign in to register as a buyer</p>
-        <button onClick={() => navigate('/auth')} className="bg-blue-600 text-white px-6 py-3 rounded-lg">Sign In</button>
-      </div>
-    </div>
-  );
-
   if (success) return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center">
       <div className="text-center bg-white p-8 rounded-xl shadow-lg">
