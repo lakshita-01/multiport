@@ -1,15 +1,70 @@
 import React, { useState, useEffect } from 'react';
 import { Routes, Route, useNavigate } from 'react-router-dom';
-import { Shield, ArrowLeft, Building2, Heart, ShoppingBag, CheckCircle } from 'lucide-react';
+import { Shield, ArrowLeft, Building2, Heart, ShoppingBag, CheckCircle, Plus, X } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Card } from '../components/ui/card';
 import { Badge } from '../components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
+import { Input } from '../components/ui/input';
+import { Label } from '../components/ui/label';
 import axios from 'axios';
 import { toast } from 'sonner';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || 'https://multiport-backend-gutv.onrender.com';
 const API = `${BACKEND_URL}/api`;
+
+const EMPTY_FORM = { property_type: '', location: '', area_size: '', selling_price: '', description: '', seller_name: '', seller_email: '', seller_phone: '' };
+
+function AddPropertyForm({ onAdded }) {
+  const [open, setOpen] = useState(false);
+  const [form, setForm] = useState(EMPTY_FORM);
+  const [loading, setLoading] = useState(false);
+  const token = localStorage.getItem('multivista_auth_token');
+
+  const handle = e => setForm(f => ({ ...f, [e.target.name]: e.target.value }));
+
+  const submit = async e => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      await axios.post(`${API}/admin/properties`, { ...form, selling_price: Number(form.selling_price) }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      toast.success('Property added!');
+      setForm(EMPTY_FORM);
+      setOpen(false);
+      onAdded();
+    } catch (err) {
+      toast.error(err.response?.data?.error || 'Failed to add property');
+    } finally { setLoading(false); }
+  };
+
+  if (!open) return (
+    <Button onClick={() => setOpen(true)} className="gap-2 mb-2"><Plus className="h-4 w-4" />Add Property</Button>
+  );
+
+  return (
+    <Card className="p-6 bg-white mb-4">
+      <div className="flex justify-between items-center mb-4">
+        <h3 className="text-lg font-bold text-slate-900">Add New Property</h3>
+        <button onClick={() => setOpen(false)}><X className="h-5 w-5 text-slate-500" /></button>
+      </div>
+      <form onSubmit={submit} className="grid md:grid-cols-2 gap-4">
+        <div><Label>Seller Name</Label><Input name="seller_name" value={form.seller_name} onChange={handle} required /></div>
+        <div><Label>Seller Email</Label><Input name="seller_email" type="email" value={form.seller_email} onChange={handle} required /></div>
+        <div><Label>Seller Phone</Label><Input name="seller_phone" value={form.seller_phone} onChange={handle} required /></div>
+        <div><Label>Property Type</Label><Input name="property_type" placeholder="e.g. apartment, villa" value={form.property_type} onChange={handle} required /></div>
+        <div><Label>Location</Label><Input name="location" value={form.location} onChange={handle} required /></div>
+        <div><Label>Area Size (sq. ft.)</Label><Input name="area_size" value={form.area_size} onChange={handle} required /></div>
+        <div><Label>Selling Price (₹)</Label><Input name="selling_price" type="number" value={form.selling_price} onChange={handle} required /></div>
+        <div className="md:col-span-2"><Label>Description</Label><Input name="description" value={form.description} onChange={handle} required /></div>
+        <div className="md:col-span-2">
+          <Button type="submit" disabled={loading}>{loading ? 'Adding...' : 'Add Property'}</Button>
+        </div>
+      </form>
+    </Card>
+  );
+}
 
 function AdminHome() {
   const navigate = useNavigate();
@@ -22,11 +77,13 @@ function AdminHome() {
   }, []);
 
   const fetchData = async () => {
+    const token = localStorage.getItem('multivista_auth_token');
+    const headers = { Authorization: `Bearer ${token}` };
     try {
       const [profilesRes, propertiesRes, ordersRes] = await Promise.all([
-        axios.get(`${API}/admin/matrimonial-profiles`, { withCredentials: true }),
-        axios.get(`${API}/admin/properties`, { withCredentials: true }),
-        axios.get(`${API}/admin/orders`, { withCredentials: true })
+        axios.get(`${API}/admin/matrimonial-profiles`, { headers }),
+        axios.get(`${API}/admin/properties`, { headers }),
+        axios.get(`${API}/admin/orders`, { headers })
       ]);
       setMatrimonialProfiles(profilesRes.data);
       setProperties(propertiesRes.data);
@@ -37,11 +94,12 @@ function AdminHome() {
   };
 
   const approveProfile = async (profileId) => {
+    const token = localStorage.getItem('multivista_auth_token');
     try {
       await axios.patch(
         `${API}/admin/matrimonial-profiles/${profileId}/approve`,
         {},
-        { withCredentials: true }
+        { headers: { Authorization: `Bearer ${token}` } }
       );
       toast.success('Profile approved!');
       fetchData();
@@ -186,7 +244,8 @@ function AdminHome() {
           </TabsContent>
 
           <TabsContent value="properties">
-            <div className="space-y-4" data-testid="properties-list">
+            <AddPropertyForm onAdded={fetchData} />
+            <div className="space-y-4 mt-6" data-testid="properties-list">
               {properties.map((property) => (
                 <Card key={property.id} className="p-6 bg-white" data-testid={`property-${property.id}`}>
                   <div className="flex justify-between items-start">
