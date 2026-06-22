@@ -4,36 +4,29 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Vajreshvari</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
     <style>
-      /* ── Spacing fixes for deployed build ── */
-
-      /* Ensure root never overflows */
+      /* ── Vajreshvari spacing & layout fixes ── */
+      *, *::before, *::after { box-sizing: border-box; }
+      html, body { overflow-x: hidden; }
       #root { overflow-x: hidden; }
 
-      /* Header: cap width and add consistent side padding */
-      header .max-w-7xl,
-      footer .max-w-7xl { padding-left: 1.5rem; padding-right: 1.5rem; }
+      /* Ensure fonts apply before bundle JS loads */
+      body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+      h1, h2, h3, h4, h5, h6 { font-family: 'Space Grotesk', sans-serif; }
 
-      /* Hero section breathing room */
-      section.pt-20 { padding-left: 1rem; padding-right: 1rem; }
+      /* Cards section horizontal padding */
+      .max-w-7xl { padding-left: 1rem; padding-right: 1rem; }
+      @media (min-width: 640px)  { .max-w-7xl { padding-left: 1.5rem; padding-right: 1.5rem; } }
+      @media (min-width: 1024px) { .max-w-7xl { padding-left: 2rem;   padding-right: 2rem; } }
 
-      /* Module cards grid: side padding so cards don't touch edges */
-      section.pb-20 > .max-w-7xl { padding-left: 1.5rem; padding-right: 1.5rem; }
-
-      /* On mobile: reduce card inner padding */
-      @media (max-width: 768px) {
-        .group.bg-white.rounded-2xl { padding: 1.5rem !important; }
-        section.pt-20 { padding-top: 3rem !important; padding-bottom: 2rem !important; }
-        section.pb-20 { padding-bottom: 3rem !important; }
-        .grid { gap: 1.25rem !important; }
-        h2.text-4xl { font-size: 2rem !important; line-height: 2.4rem !important; }
-        h2.text-4xl .block { font-size: 2rem !important; }
-      }
-
-      /* On small screens: single column cards look better with less padding */
-      @media (max-width: 480px) {
-        .group.bg-white.rounded-2xl { padding: 1.25rem !important; }
-        section.pb-20 > .max-w-7xl { padding-left: 1rem; padding-right: 1rem; }
+      /* Mobile: reduce card padding and grid gap */
+      @media (max-width: 767px) {
+        .\!rounded-2xl, [class*='rounded-2xl'] { border-radius: 1rem; }
+        [class*='gap-8'] { gap: 1.25rem !important; }
+        .card-hover { padding: 1.5rem !important; }
       }
     </style>
   </head>
