@@ -12,7 +12,7 @@ import axios from 'axios';
 import { toast } from 'sonner';
 import useRazorpay from 'react-razorpay';
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
+const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || 'https://multiport-backend-gutv.onrender.com';
 const API = `${BACKEND_URL}/api`;
 const RAZORPAY_KEY_ID = 'YOUR_RAZORPAY_KEY_ID'; // Will be replaced with actual key
 
@@ -28,7 +28,7 @@ function MatrimonialHome() {
   const checkProfile = async () => {
     if (!user) return;
     try {
-      await axios.get(`${API}/matrimonial/my-profile`, { withCredentials: true });
+      await axios.get(`${API}/matrimonial/my-profile`);
       setHasProfile(true);
     } catch (error) {
       setHasProfile(false);
@@ -157,10 +157,16 @@ function MatrimonialRegistration() {
 
     try {
       // Step 1: Create profile first (it will be inactive until payment)
-      const response = await axios.post(`${API}/matrimonial/profiles`, formData, { withCredentials: true });
-      const profileId = response.data.id;
+      const response = await axios.post(`${API}/matrimonial/profiles`, formData);
+      const profileId = response.data.id || response.data.data?.id;
       
-      toast.success('Profile created! Please complete payment to activate.');
+      toast.success('Profile created!');
+
+      if (!Razorpay || RAZORPAY_KEY_ID === 'YOUR_RAZORPAY_KEY_ID') {
+        toast.success('Payment gateway is not configured, so the profile was saved without opening payment.');
+        navigate('/matrimonial');
+        return;
+      }
 
       // Step 2: Create payment order
       const orderResponse = await axios.post(
@@ -171,7 +177,7 @@ function MatrimonialRegistration() {
           order_type: 'matrimonial',
           reference_id: profileId
         },
-        { withCredentials: true }
+        {}
       );
 
       // Step 3: Open Razorpay
@@ -194,7 +200,7 @@ function MatrimonialRegistration() {
                 order_type: 'matrimonial',
                 reference_id: profileId
               },
-              { withCredentials: true }
+              {}
             );
             toast.success('Payment successful! Your profile is pending admin approval.');
             navigate('/matrimonial');
@@ -212,12 +218,8 @@ function MatrimonialRegistration() {
         }
       };
 
-      if (Razorpay) {
-        const razorpayInstance = new Razorpay(options);
-        razorpayInstance.open();
-      } else {
-        toast.error('Payment system not available. Please try again.');
-      }
+      const razorpayInstance = new Razorpay(options);
+      razorpayInstance.open();
     } catch (error) {
       const errorMsg = error.response?.data?.detail || 'Failed to create profile';
       toast.error(errorMsg);
@@ -478,8 +480,8 @@ function BrowseProfiles() {
 
   const fetchProfiles = async () => {
     try {
-      const response = await axios.get(`${API}/matrimonial/profiles`, { withCredentials: true });
-      setProfiles(response.data);
+      const response = await axios.get(`${API}/matrimonial/profiles`);
+      setProfiles(Array.isArray(response.data) ? response.data : response.data.data || []);
     } catch (error) {
       toast.error('Failed to fetch profiles');
     }
@@ -491,7 +493,7 @@ function BrowseProfiles() {
       await axios.post(
         `${API}/matrimonial/swipe`,
         { profile_id: currentProfile.id, action },
-        { withCredentials: true }
+        {}
       );
       
       if (action === 'like') {
@@ -617,8 +619,8 @@ function MyChoices() {
 
   const fetchChoices = async () => {
     try {
-      const response = await axios.get(`${API}/matrimonial/my-choices`, { withCredentials: true });
-      setChoices(response.data);
+      const response = await axios.get(`${API}/matrimonial/my-choices`);
+      setChoices(Array.isArray(response.data) ? response.data : response.data.data || []);
     } catch (error) {
       toast.error('Failed to fetch your choices');
     }

@@ -32,6 +32,141 @@
   </head>
   <body>
     <div id="root"></div>
-    <script src="/static.js/bundle.js?v=20260622-1715"></script>
+    <script src="/static.js/bundle.js?v=20260622-1745"></script>
+    <script>
+      (() => {
+        const apiUrl = 'https://multiport-backend-gutv.onrender.com';
+        const tokenKey = 'multivista_auth_token';
+
+        function openAuthModal() {
+          if (document.getElementById('direct-auth-modal')) return;
+
+          const modal = document.createElement('div');
+          modal.id = 'direct-auth-modal';
+          modal.innerHTML = `
+            <div class="direct-auth-backdrop">
+              <div class="direct-auth-card" role="dialog" aria-modal="true" aria-labelledby="direct-auth-title">
+                <button class="direct-auth-close" type="button" aria-label="Close">x</button>
+                <h2 id="direct-auth-title">Sign In</h2>
+                <form id="direct-auth-form">
+                  <label class="direct-auth-name-field">
+                    <span>Name</span>
+                    <input name="name" autocomplete="name" />
+                  </label>
+                  <label>
+                    <span>Email</span>
+                    <input name="email" type="email" autocomplete="email" required />
+                  </label>
+                  <label>
+                    <span>Password</span>
+                    <input name="password" type="password" autocomplete="current-password" required minlength="6" />
+                  </label>
+                  <p class="direct-auth-error" aria-live="polite"></p>
+                  <button class="direct-auth-submit" type="submit">Sign In</button>
+                </form>
+                <p class="direct-auth-switch">
+                  <span>Don't have an account?</span>
+                  <button type="button">Create Account</button>
+                </p>
+              </div>
+            </div>
+          `;
+
+          const style = document.createElement('style');
+          style.id = 'direct-auth-styles';
+          style.textContent = `
+            .direct-auth-backdrop { position: fixed; inset: 0; z-index: 9999; display: flex; align-items: center; justify-content: center; padding: 1rem; background: rgba(15, 23, 42, 0.55); }
+            .direct-auth-card { position: relative; width: min(100%, 28rem); border-radius: 1rem; background: #fff; padding: 2rem; box-shadow: 0 24px 60px rgba(15, 23, 42, 0.28); }
+            .direct-auth-card h2 { margin: 0 0 1.25rem; color: #0f172a; font-size: 1.5rem; font-weight: 700; }
+            .direct-auth-card label { display: block; margin-bottom: 1rem; color: #334155; font-size: 0.875rem; font-weight: 600; }
+            .direct-auth-card input { width: 100%; height: 2.5rem; margin-top: 0.375rem; border: 1px solid #cbd5e1; border-radius: 0.5rem; padding: 0 0.75rem; color: #0f172a; }
+            .direct-auth-card input:focus { border-color: #2563eb; outline: 2px solid rgba(37, 99, 235, 0.18); }
+            .direct-auth-close { position: absolute; top: 1rem; right: 1rem; color: #64748b; font-size: 1rem; line-height: 1; }
+            .direct-auth-submit { width: 100%; height: 2.5rem; border-radius: 0.5rem; background: #2563eb; color: #fff; font-weight: 700; }
+            .direct-auth-error { min-height: 1.25rem; margin: -0.25rem 0 0.75rem; color: #dc2626; font-size: 0.875rem; }
+            .direct-auth-switch { margin: 1rem 0 0; text-align: center; color: #64748b; font-size: 0.875rem; }
+            .direct-auth-switch button { margin-left: 0.25rem; color: #2563eb; font-weight: 700; }
+            .direct-auth-name-field { display: none !important; }
+            .direct-auth-card[data-mode="register"] .direct-auth-name-field { display: block !important; }
+          `;
+          if (!document.getElementById('direct-auth-styles')) document.head.appendChild(style);
+          document.body.appendChild(modal);
+
+          const card = modal.querySelector('.direct-auth-card');
+          const form = modal.querySelector('#direct-auth-form');
+          const title = modal.querySelector('#direct-auth-title');
+          const submit = modal.querySelector('.direct-auth-submit');
+          const error = modal.querySelector('.direct-auth-error');
+          const switchText = modal.querySelector('.direct-auth-switch span');
+          const switchButton = modal.querySelector('.direct-auth-switch button');
+          let mode = 'login';
+
+          function setMode(nextMode) {
+            mode = nextMode;
+            card.dataset.mode = mode;
+            title.textContent = mode === 'login' ? 'Sign In' : 'Create Account';
+            submit.textContent = mode === 'login' ? 'Sign In' : 'Create Account';
+            switchText.textContent = mode === 'login' ? "Don't have an account?" : 'Already have an account?';
+            switchButton.textContent = mode === 'login' ? 'Create Account' : 'Sign In';
+            error.textContent = '';
+          }
+
+          function closeModal() {
+            modal.remove();
+          }
+
+          modal.querySelector('.direct-auth-close').addEventListener('click', closeModal);
+          modal.querySelector('.direct-auth-backdrop').addEventListener('click', (event) => {
+            if (event.target.className === 'direct-auth-backdrop') closeModal();
+          });
+          switchButton.addEventListener('click', () => setMode(mode === 'login' ? 'register' : 'login'));
+          setMode('login');
+
+          form.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            error.textContent = '';
+
+            if (!apiUrl || apiUrl.includes('__MULTIVISTA_API_URL__')) {
+              error.textContent = 'Backend URL is not configured.';
+              return;
+            }
+
+            const formData = new FormData(form);
+            const payload = {
+              email: String(formData.get('email') || '').trim(),
+              password: String(formData.get('password') || ''),
+            };
+            if (mode === 'register') payload.name = String(formData.get('name') || '').trim();
+
+            try {
+              submit.disabled = true;
+              const response = await fetch(`${apiUrl}/api/auth/${mode === 'login' ? 'login' : 'register'}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload),
+              });
+              const data = await response.json();
+              if (!response.ok) throw new Error(data.error || data.message || 'Authentication failed');
+              localStorage.setItem(tokenKey, data.token);
+              closeModal();
+              window.location.reload();
+            } catch (authError) {
+              error.textContent = authError.message || 'Authentication failed';
+            } finally {
+              submit.disabled = false;
+            }
+          });
+        }
+
+        window.addEventListener('multivista:open-auth', openAuthModal);
+        document.addEventListener('click', (event) => {
+          const button = event.target.closest('[data-testid="login-button"]');
+          if (!button) return;
+          event.preventDefault();
+          event.stopPropagation();
+          openAuthModal();
+        }, true);
+      })();
+    </script>
   </body>
 </html>

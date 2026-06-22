@@ -9,8 +9,9 @@ import EcommerceModule from './pages/EcommerceModule';
 import AdminDashboard from './pages/AdminDashboard';
 import { Toaster } from './components/ui/sonner';
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
+const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || 'https://multiport-backend-gutv.onrender.com';
 const API = `${BACKEND_URL}/api`;
+const AUTH_TOKEN_KEY = 'multivista_auth_token';
 
 export const AuthContext = React.createContext();
 
@@ -23,10 +24,19 @@ function App() {
   }, []);
 
   const checkAuth = async () => {
+    const token = localStorage.getItem(AUTH_TOKEN_KEY);
+    if (!token) {
+      setLoading(false);
+      return;
+    }
+
     try {
-      const response = await axios.get(`${API}/auth/me`, { withCredentials: true });
-      setUser(response.data);
+      axios.defaults.headers.common.Authorization = `Bearer ${token}`;
+      const response = await axios.get(`${API}/auth/me`);
+      setUser(response.data.user);
     } catch (error) {
+      localStorage.removeItem(AUTH_TOKEN_KEY);
+      delete axios.defaults.headers.common.Authorization;
       console.log('Not authenticated');
     } finally {
       setLoading(false);
@@ -34,12 +44,9 @@ function App() {
   };
 
   const logout = async () => {
-    try {
-      await axios.post(`${API}/auth/logout`, {}, { withCredentials: true });
-      setUser(null);
-    } catch (error) {
-      console.error('Logout failed:', error);
-    }
+    localStorage.removeItem(AUTH_TOKEN_KEY);
+    delete axios.defaults.headers.common.Authorization;
+    setUser(null);
   };
 
   if (loading) {

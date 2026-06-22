@@ -11,7 +11,7 @@ import { Card } from '../components/ui/card';
 import axios from 'axios';
 import { toast } from 'sonner';
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
+const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || 'https://multiport-backend-gutv.onrender.com';
 const API = `${BACKEND_URL}/api`;
 
 function PropertyHome() {
@@ -117,7 +117,7 @@ function BuyerRegistration() {
     }
 
     try {
-      await axios.post(`${API}/property/buyer-profile`, formData, { withCredentials: true });
+      await axios.post(`${API}/property/buyer-profile`, formData);
       toast.success('Buyer profile created successfully!');
       navigate('/property/listings');
     } catch (error) {
@@ -290,7 +290,7 @@ function SellerRegistration() {
     }
 
     try {
-      await axios.post(`${API}/property/listings`, formData, { withCredentials: true });
+      await axios.post(`${API}/property/listings`, formData);
       toast.success('Property listed successfully!');
       navigate('/property/listings');
     } catch (error) {
@@ -456,13 +456,13 @@ function PropertyListings() {
   const fetchProperties = async () => {
     try {
       const params = new URLSearchParams();
-      if (filters.property_type) params.append('property_type', filters.property_type);
+      if (filters.property_type && filters.property_type !== 'all_types') params.append('property_type', filters.property_type);
       if (filters.location) params.append('location', filters.location);
       if (filters.min_price) params.append('min_price', filters.min_price);
       if (filters.max_price) params.append('max_price', filters.max_price);
 
       const response = await axios.get(`${API}/property/listings?${params.toString()}`);
-      setProperties(response.data);
+      setProperties(Array.isArray(response.data) ? response.data : response.data.data || []);
     } catch (error) {
       toast.error('Failed to fetch properties');
     }

@@ -8,8 +8,9 @@ import { Label } from '../components/ui/label';
 import axios from 'axios';
 import { toast } from 'sonner';
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
+const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || 'https://multiport-backend-gutv.onrender.com';
 const API = `${BACKEND_URL}/api`;
+const AUTH_TOKEN_KEY = 'multivista_auth_token';
 
 function AuthModal({ onClose, onSuccess }) {
   const [mode, setMode] = useState('login');
@@ -23,10 +24,12 @@ function AuthModal({ onClose, onSuccess }) {
         ? { email: form.email, password: form.password }
         : { name: form.name, email: form.email, password: form.password };
       const res = await axios.post(endpoint, payload, { withCredentials: true });
+      localStorage.setItem(AUTH_TOKEN_KEY, res.data.token);
+      axios.defaults.headers.common.Authorization = `Bearer ${res.data.token}`;
       onSuccess(res.data.user);
       onClose();
     } catch (err) {
-      toast.error(err.response?.data?.message || 'Authentication failed');
+      toast.error(err.response?.data?.message || err.response?.data?.error || 'Authentication failed');
     }
   };
 
@@ -123,7 +126,7 @@ export default function Home() {
                   <div className="h-8 w-8 rounded-full bg-blue-600 flex items-center justify-center">
                     <User className="h-4 w-4 text-white" />
                   </div>
-                  <span className="text-sm font-medium text-slate-700">{user.name}</span>
+                  <span className="text-sm font-medium text-slate-700">{user.name || user.email}</span>
                 </div>
                 <Button
                   onClick={logout}
@@ -142,7 +145,7 @@ export default function Home() {
                 className="bg-blue-600 hover:bg-blue-700"
                 data-testid="login-button"
               >
-                Login
+                Sign In
               </Button>
             )}
           </div>

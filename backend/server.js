@@ -8,7 +8,9 @@ const app = express();
 connectDB();
 
 app.use(cors({
-  origin: process.env.FRONTEND_URL ? process.env.FRONTEND_URL.split(',') : '*',
+  origin: process.env.FRONTEND_URL
+    ? process.env.FRONTEND_URL.split(',')
+    : ['https://vajreshvari.netlify.app', 'http://localhost:3000', 'http://localhost:5173'],
   credentials: true,
 }));
 app.use(express.json({ limit: '10mb' }));
@@ -17,6 +19,7 @@ app.use('/api/auth', require('./routes/auth'));
 app.use('/api/property', require('./routes/property'));
 app.use('/api/matrimonial', require('./routes/matrimonial'));
 app.use('/api/ecommerce', require('./routes/ecommerce'));
+app.use('/api/payment', require('./routes/payment'));
 app.use('/api/admin', require('./routes/admin'));
 
 app.get('/health', (req, res) => res.json({ status: 'ok' }));
