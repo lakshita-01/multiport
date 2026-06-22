@@ -1,0 +1,16 @@
+# Frontend
+node_modules/
+dist/
+.env
+.env.local
+
+# Backend
+backend/node_modules/
+backend/.env
+
+# OS
+.DS_Store
+Thumbs.db
+ 
+# Ignore committed frontend build artifacts
+static.js/
