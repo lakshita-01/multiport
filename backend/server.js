@@ -7,12 +7,30 @@ const app = express();
 
 connectDB();
 
-app.use(cors({
-  origin: process.env.FRONTEND_URL
-    ? process.env.FRONTEND_URL.split(',')
-    : ['https://vajreshvari.netlify.app', 'http://localhost:3000', 'http://localhost:5173'],
+const defaultOrigins = ['https://vajreshvari.netlify.app', 'http://localhost:3000', 'http://localhost:5173'];
+const allowedOrigins = [
+  ...(process.env.FRONTEND_URL || '').split(','),
+  ...defaultOrigins,
+]
+  .map((origin) => origin.trim().replace(/\/+$/, ''))
+  .filter(Boolean);
+
+const corsOptions = {
+  origin(origin, callback) {
+    if (!origin) return callback(null, true);
+
+    const normalizedOrigin = origin.replace(/\/+$/, '');
+    if (allowedOrigins.includes(normalizedOrigin)) {
+      return callback(null, true);
+    }
+
+    return callback(new Error(`CORS blocked origin: ${origin}`));
+  },
   credentials: true,
-}));
+};
+
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions));
 app.use(express.json({ limit: '10mb' }));
 
 app.use('/api/auth', require('./routes/auth'));

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import axios from 'axios';
+import api from './src/lib/api';
 import '@/App.css';
 import Home from './pages/Home';
 import PropertyModule from './pages/PropertyModule';
@@ -9,8 +9,6 @@ import EcommerceModule from './pages/EcommerceModule';
 import AdminDashboard from './pages/AdminDashboard';
 import { Toaster } from './components/ui/sonner';
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || 'https://multiport-backend-gutv.onrender.com';
-const API = `${BACKEND_URL}/api`;
 const AUTH_TOKEN_KEY = 'multivista_auth_token';
 
 export const AuthContext = React.createContext();
@@ -25,27 +23,19 @@ function App() {
 
   const checkAuth = async () => {
     const token = localStorage.getItem(AUTH_TOKEN_KEY);
-    if (!token) {
-      setLoading(false);
-      return;
-    }
-
+    if (!token) { setLoading(false); return; }
     try {
-      axios.defaults.headers.common.Authorization = `Bearer ${token}`;
-      const response = await axios.get(`${API}/auth/me`);
+      const response = await api.get('/auth/me');
       setUser(response.data.user);
     } catch (error) {
       localStorage.removeItem(AUTH_TOKEN_KEY);
-      delete axios.defaults.headers.common.Authorization;
-      console.log('Not authenticated');
     } finally {
       setLoading(false);
     }
   };
 
-  const logout = async () => {
+  const logout = () => {
     localStorage.removeItem(AUTH_TOKEN_KEY);
-    delete axios.defaults.headers.common.Authorization;
     setUser(null);
   };
 

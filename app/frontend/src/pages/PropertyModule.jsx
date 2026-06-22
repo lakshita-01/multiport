@@ -8,11 +8,8 @@ import { Label } from '../components/ui/label';
 import { Textarea } from '../components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { Card } from '../components/ui/card';
-import axios from 'axios';
+import api from '../lib/api';
 import { toast } from 'sonner';
-
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || 'https://multiport-backend-gutv.onrender.com';
-const API = `${BACKEND_URL}/api`;
 
 function PropertyHome() {
   const navigate = useNavigate();
@@ -117,7 +114,7 @@ function BuyerRegistration() {
     }
 
     try {
-      await axios.post(`${API}/property/buyer-profile`, formData);
+      await api.post('/property/buyer-profile', formData);
       toast.success('Buyer profile created successfully!');
       navigate('/property/listings');
     } catch (error) {
@@ -290,7 +287,7 @@ function SellerRegistration() {
     }
 
     try {
-      await axios.post(`${API}/property/listings`, formData);
+      await api.post('/property/listings', formData);
       toast.success('Property listed successfully!');
       navigate('/property/listings');
     } catch (error) {
@@ -461,7 +458,7 @@ function PropertyListings() {
       if (filters.min_price) params.append('min_price', filters.min_price);
       if (filters.max_price) params.append('max_price', filters.max_price);
 
-      const response = await axios.get(`${API}/property/listings?${params.toString()}`);
+      const response = await api.get(`/property/listings?${params.toString()}`);
       setProperties(Array.isArray(response.data) ? response.data : response.data.data || []);
     } catch (error) {
       toast.error('Failed to fetch properties');
