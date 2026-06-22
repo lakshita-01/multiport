@@ -166,7 +166,7 @@ export default function Home() {
       </section>
 
       {/* Module Cards */}
-      <section className="pb-20 px-4">
+      <section className="pb-20 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
           <div className="grid md:grid-cols-3 gap-8">
             {modules.map((module, index) => {

@@ -4,6 +4,38 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Vajreshvari</title>
+    <style>
+      /* ── Spacing fixes for deployed build ── */
+
+      /* Ensure root never overflows */
+      #root { overflow-x: hidden; }
+
+      /* Header: cap width and add consistent side padding */
+      header .max-w-7xl,
+      footer .max-w-7xl { padding-left: 1.5rem; padding-right: 1.5rem; }
+
+      /* Hero section breathing room */
+      section.pt-20 { padding-left: 1rem; padding-right: 1rem; }
+
+      /* Module cards grid: side padding so cards don't touch edges */
+      section.pb-20 > .max-w-7xl { padding-left: 1.5rem; padding-right: 1.5rem; }
+
+      /* On mobile: reduce card inner padding */
+      @media (max-width: 768px) {
+        .group.bg-white.rounded-2xl { padding: 1.5rem !important; }
+        section.pt-20 { padding-top: 3rem !important; padding-bottom: 2rem !important; }
+        section.pb-20 { padding-bottom: 3rem !important; }
+        .grid { gap: 1.25rem !important; }
+        h2.text-4xl { font-size: 2rem !important; line-height: 2.4rem !important; }
+        h2.text-4xl .block { font-size: 2rem !important; }
+      }
+
+      /* On small screens: single column cards look better with less padding */
+      @media (max-width: 480px) {
+        .group.bg-white.rounded-2xl { padding: 1.25rem !important; }
+        section.pb-20 > .max-w-7xl { padding-left: 1rem; padding-right: 1rem; }
+      }
+    </style>
   </head>
   <body>
     <div id="root"></div>
