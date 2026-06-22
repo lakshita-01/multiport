@@ -7,11 +7,8 @@ import { Badge } from '../components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
-import axios from 'axios';
+import api from '../lib/api';
 import { toast } from 'sonner';
-
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || 'https://multiport-backend-gutv.onrender.com';
-const API = `${BACKEND_URL}/api`;
 
 const EMPTY_FORM = { property_type: '', location: '', area_size: '', selling_price: '', description: '', seller_name: '', seller_email: '', seller_phone: '' };
 
@@ -19,17 +16,13 @@ function AddPropertyForm({ onAdded }) {
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState(EMPTY_FORM);
   const [loading, setLoading] = useState(false);
-  const token = localStorage.getItem('multivista_auth_token');
-
   const handle = e => setForm(f => ({ ...f, [e.target.name]: e.target.value }));
 
   const submit = async e => {
     e.preventDefault();
     setLoading(true);
     try {
-      await axios.post(`${API}/admin/properties`, { ...form, selling_price: Number(form.selling_price) }, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      await api.post('/admin/properties', { ...form, selling_price: Number(form.selling_price) });
       toast.success('Property added!');
       setForm(EMPTY_FORM);
       setOpen(false);
@@ -77,13 +70,11 @@ function AdminHome() {
   }, []);
 
   const fetchData = async () => {
-    const token = localStorage.getItem('multivista_auth_token');
-    const headers = { Authorization: `Bearer ${token}` };
     try {
       const [profilesRes, propertiesRes, ordersRes] = await Promise.all([
-        axios.get(`${API}/admin/matrimonial-profiles`, { headers }),
-        axios.get(`${API}/admin/properties`, { headers }),
-        axios.get(`${API}/admin/orders`, { headers })
+        api.get('/admin/matrimonial-profiles'),
+        api.get('/admin/properties'),
+        api.get('/admin/orders')
       ]);
       setMatrimonialProfiles(profilesRes.data);
       setProperties(propertiesRes.data);
@@ -94,13 +85,8 @@ function AdminHome() {
   };
 
   const approveProfile = async (profileId) => {
-    const token = localStorage.getItem('multivista_auth_token');
     try {
-      await axios.patch(
-        `${API}/admin/matrimonial-profiles/${profileId}/approve`,
-        {},
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      await api.patch(`/admin/matrimonial-profiles/${profileId}/approve`, {});
       toast.success('Profile approved!');
       fetchData();
     } catch (error) {

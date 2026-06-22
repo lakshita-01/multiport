@@ -7,13 +7,8 @@ import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Card } from '../components/ui/card';
 import { Badge } from '../components/ui/badge';
-import axios from 'axios';
+import api from '../lib/api';
 import { toast } from 'sonner';
-import useRazorpay from 'react-razorpay';
-
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || 'https://multiport-backend-gutv.onrender.com';
-const API = `${BACKEND_URL}/api`;
-const RAZORPAY_KEY_ID = 'YOUR_RAZORPAY_KEY_ID';
 
 function EcommerceHome() {
   const navigate = useNavigate();
@@ -28,7 +23,7 @@ function EcommerceHome() {
 
   const fetchProducts = async () => {
     try {
-      const response = await axios.get(`${API}/ecommerce/products`);
+      const response = await api.get('/ecommerce/products');
       setProducts(Array.isArray(response.data) ? response.data : response.data.data || []);
     } catch (error) {
       toast.error('Failed to fetch products');
@@ -37,7 +32,7 @@ function EcommerceHome() {
 
   const fetchCart = async () => {
     try {
-      const response = await axios.get(`${API}/ecommerce/cart`);
+      const response = await api.get('/ecommerce/cart');
       setCart(response.data.items || response.data.data || []);
     } catch (error) {
       console.log('Cart fetch error');
@@ -47,19 +42,13 @@ function EcommerceHome() {
   const addToCart = async (product) => {
     const existingItem = cart.find(item => item.product_id === product.id);
     let newCart;
-    
     if (existingItem) {
-      newCart = cart.map(item =>
-        item.product_id === product.id
-          ? { ...item, quantity: item.quantity + 1 }
-          : item
-      );
+      newCart = cart.map(item => item.product_id === product.id ? { ...item, quantity: item.quantity + 1 } : item);
     } else {
       newCart = [...cart, { product_id: product.id, quantity: 1 }];
     }
-
     try {
-      await axios.post(`${API}/ecommerce/cart`, newCart);
+      await api.post('/ecommerce/cart', newCart);
       setCart(newCart);
       toast.success('Added to cart!');
     } catch (error) {
@@ -172,8 +161,8 @@ function Cart() {
   const fetchData = async () => {
     try {
       const [cartRes, productsRes] = await Promise.all([
-        axios.get(`${API}/ecommerce/cart`),
-        axios.get(`${API}/ecommerce/products`)
+        api.get('/ecommerce/cart'),
+        api.get('/ecommerce/products')
       ]);
       setCart(cartRes.data.items || cartRes.data.data || []);
       setProducts(Array.isArray(productsRes.data) ? productsRes.data : productsRes.data.data || []);
@@ -184,19 +173,13 @@ function Cart() {
     }
   };
 
-  const getProductDetails = (productId) => {
-    return products.find(p => p.id === productId);
-  };
+  const getProductDetails = (productId) => products.find(p => p.id === productId);
 
   const updateQuantity = async (productId, newQuantity) => {
     if (newQuantity < 1) return;
-    
-    const newCart = cart.map(item =>
-      item.product_id === productId ? { ...item, quantity: newQuantity } : item
-    );
-    
+    const newCart = cart.map(item => item.product_id === productId ? { ...item, quantity: newQuantity } : item);
     try {
-      await axios.post(`${API}/ecommerce/cart`, newCart);
+      await api.post('/ecommerce/cart', newCart);
       setCart(newCart);
     } catch (error) {
       toast.error('Failed to update cart');
@@ -205,9 +188,8 @@ function Cart() {
 
   const removeItem = async (productId) => {
     const newCart = cart.filter(item => item.product_id !== productId);
-    
     try {
-      await axios.post(`${API}/ecommerce/cart`, newCart);
+      await api.post('/ecommerce/cart', newCart);
       setCart(newCart);
       toast.success('Item removed');
     } catch (error) {
@@ -341,27 +323,17 @@ function Cart() {
 function Checkout() {
   const navigate = useNavigate();
   const { user } = useContext(AuthContext);
-  const [Razorpay] = useRazorpay();
   const [cart, setCart] = useState([]);
   const [products, setProducts] = useState([]);
-  const [shippingAddress, setShippingAddress] = useState({
-    fullName: '',
-    address: '',
-    city: '',
-    state: '',
-    pincode: '',
-    phone: ''
-  });
+  const [shippingAddress, setShippingAddress] = useState({ fullName: '', address: '', city: '', state: '', pincode: '', phone: '' });
 
-  useEffect(() => {
-    fetchData();
-  }, []);
+  useEffect(() => { fetchData(); }, []);
 
   const fetchData = async () => {
     try {
       const [cartRes, productsRes] = await Promise.all([
-        axios.get(`${API}/ecommerce/cart`),
-        axios.get(`${API}/ecommerce/products`)
+        api.get('/ecommerce/cart'),
+        api.get('/ecommerce/products')
       ]);
       setCart(cartRes.data.items || cartRes.data.data || []);
       setProducts(Array.isArray(productsRes.data) ? productsRes.data : productsRes.data.data || []);
@@ -370,84 +342,20 @@ function Checkout() {
     }
   };
 
-  const calculateTotal = () => {
-    return cart.reduce((total, item) => {
-      const product = products.find(p => p.id === item.product_id);
-      return total + (product ? product.price * item.quantity : 0);
-    }, 0);
-  };
+  const calculateTotal = () => cart.reduce((total, item) => {
+    const product = products.find(p => p.id === item.product_id);
+    return total + (product ? product.price * item.quantity : 0);
+  }, 0);
 
   const handleCheckout = async (e) => {
     e.preventDefault();
-    if (!user) {
-      toast.error('Please login first');
-      return;
-    }
-
+    if (!user) { toast.error('Please login first'); return; }
     try {
-      // Create order
-      const orderResponse = await axios.post(
-        `${API}/ecommerce/orders`,
-        { items: cart, shipping_address: shippingAddress }
-      );
-      const order = orderResponse.data;
-
-      // Create payment order
-      const paymentOrderResponse = await axios.post(
-        `${API}/payment/create-order`,
-        {
-          amount: Math.round(order.total_amount * 100), // Convert to paise
-          currency: 'INR',
-          order_type: 'ecommerce',
-          reference_id: order.id
-        },
-        {}
-      );
-
-      // Open Razorpay
-      const options = {
-        key: RAZORPAY_KEY_ID,
-        amount: paymentOrderResponse.data.amount,
-        currency: 'INR',
-        name: 'MultiVista E-Commerce',
-        description: `Order #${order.order_number}`,
-        order_id: paymentOrderResponse.data.id,
-        handler: async (razorpayResponse) => {
-          try {
-            await axios.post(
-              `${API}/payment/verify`,
-              {
-                razorpay_payment_id: razorpayResponse.razorpay_payment_id,
-                razorpay_order_id: razorpayResponse.razorpay_order_id,
-                razorpay_signature: razorpayResponse.razorpay_signature,
-                order_type: 'ecommerce',
-                reference_id: order.id
-              },
-              {}
-            );
-            toast.success('Order placed successfully!');
-            navigate('/ecommerce/orders');
-          } catch (error) {
-            toast.error('Payment verification failed');
-          }
-        },
-        prefill: {
-          name: shippingAddress.fullName,
-          contact: shippingAddress.phone
-        },
-        theme: {
-          color: '#059669'
-        }
-      };
-
-      if (Razorpay) {
-        const razorpayInstance = new Razorpay(options);
-        razorpayInstance.open();
-      } else {
-        toast.error('Payment system not available. Please try again.');
-      }
+      await api.post('/ecommerce/orders', { items: cart, shipping_address: shippingAddress });
+      toast.success('Order placed successfully!');
+      navigate('/ecommerce/orders');
     } catch (error) {
-      toast.error(error.response?.data?.detail || 'Failed to process order');
+      toast.error(error.response?.data?.error || 'Failed to process order');
     }
   };
 
@@ -586,7 +494,7 @@ function Orders() {
 
   const fetchOrders = async () => {
     try {
-      const response = await axios.get(`${API}/ecommerce/orders`);
+      const response = await api.get('/ecommerce/orders');
       setOrders(Array.isArray(response.data) ? response.data : response.data.data || []);
     } catch (error) {
       toast.error('Failed to fetch orders');
