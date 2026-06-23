@@ -1,5 +1,5 @@
 const express = require('express');
-const { Buyer, Seller, Property, MatrimonialProfile, Order } = require('../models');
+const { Seller, Property, MatrimonialProfile, Order } = require('../models');
 const auth = require('../middleware/auth');
 
 const router = express.Router();

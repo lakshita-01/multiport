@@ -94,8 +94,7 @@ function AdminHome() {
     }
   };
 
-  const pendingProfiles = matrimonialProfiles.filter(p => p.status === 'pending');
-  const pendingOrders = orders.filter(o => o.status === 'processing');
+  const pendingProfiles = matrimonialProfiles.filter(p => p.profile_status === 'pending_approval');
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">

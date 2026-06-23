@@ -5,11 +5,9 @@ import { Building2, Heart, ShoppingBag, LogOut, User, X } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
-import axios from 'axios';
+import api from '../lib/api';
 import { toast } from 'sonner';
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || 'https://multiport-backend-gutv.onrender.com';
-const API = `${BACKEND_URL}/api`;
 const AUTH_TOKEN_KEY = 'multivista_auth_token';
 
 function AuthModal({ onClose, onSuccess }) {
@@ -19,13 +17,12 @@ function AuthModal({ onClose, onSuccess }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const endpoint = mode === 'login' ? `${API}/auth/login` : `${API}/auth/register`;
+      const endpoint = mode === 'login' ? '/auth/login' : '/auth/register';
       const payload = mode === 'login'
         ? { email: form.email, password: form.password }
         : { name: form.name, email: form.email, password: form.password };
-      const res = await axios.post(endpoint, payload, { withCredentials: true });
+      const res = await api.post(endpoint, payload);
       localStorage.setItem(AUTH_TOKEN_KEY, res.data.token);
-      axios.defaults.headers.common.Authorization = `Bearer ${res.data.token}`;
       onSuccess(res.data.user);
       onClose();
     } catch (err) {

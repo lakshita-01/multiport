@@ -56003,6 +56003,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var react__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_0__);
 /* harmony import */ var react_router_dom__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! react-router-dom */ "./node_modules/react-router/dist/development/chunk-4WY6JWTD.mjs");
 /* harmony import */ var axios__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! axios */ "./node_modules/axios/lib/axios.js");
+axios__WEBPACK_IMPORTED_MODULE_2__["default"].interceptors.request.use(function(cfg){var t=window.localStorage.getItem("multivista_auth_token");if(t){cfg.headers=cfg.headers||{};cfg.headers["Authorization"]="Bearer "+t;}return cfg;});
 /* harmony import */ var _App_css__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! @/App.css */ "./src/App.css");
 /* harmony import */ var _pages_Home__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./pages/Home */ "./src/pages/Home.jsx");
 /* harmony import */ var _pages_PropertyModule__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./pages/PropertyModule */ "./src/pages/PropertyModule.jsx");
